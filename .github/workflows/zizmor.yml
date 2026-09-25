@@ -2,11 +2,8 @@ name: Zizmor GitHub Actions Security Analysis
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
   schedule:
     - cron: '14 4 * * 6' # weekly at 04:14 (UTC) on Saturday
   workflow_dispatch:
@@ -17,20 +14,7 @@ permissions:
 jobs:
   zizmor:
     name: Zizmor Security Analysis
-    runs-on: ubuntu-latest
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: true
     permissions:
-      contents: read
-      security-events: write  # for zizmor to upload SARIF results
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Run zizmor
-        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
-        with:
-          persona: pedantic
+      contents: read # for actions/checkout
+      security-events: write # for zizmor to upload SARIF results
+    uses: open-telemetry/shared-workflows/.github/workflows/zizmor.yml@d9b812f9924a121c6a8276ea2f9e6f5b622cdd4d # v0.10.0
