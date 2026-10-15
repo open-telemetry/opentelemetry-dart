@@ -113,9 +113,9 @@ Exporter packages depend on `opentelemetry_sdk`. `opentelemetry_sdk` defines the
 
 Since we know HTTP will be used in 90% of the cases, we split gRPC into its own package which will make web builds simpler - there's no dart.io.
 
-1. `opentelemetry_exporter_otlp_http` -  the HTTP client factory, otlp_json, otlp_user_agent, otlp_http_protocol, gzip, certificate utils.
-2. `opentelemetry_exporter_otlp_grpc` - lib/proto/ and gRPC exporters, transformers and config. It will depend on the sdk, protobuf, http, and grpc.
-3. Prometheus exporters go into its own package `opentelemetry_exporter_prometheus`.
+1. `opentelemetry_otlp_http` -  the HTTP client factory, otlp_json, otlp_user_agent, otlp_http_protocol, gzip, certificate utils.
+2. `opentelemetry_otlp_grpc` - lib/proto/ and gRPC exporters, transformers and config. It will depend on the sdk, protobuf, http, and grpc.
+3. Prometheus exporters go into its own package `opentelemetry_prometheus`.
 
 The stdout (console) and in-memory exporters have no heavy dependencies and stay in `opentelemetry_sdk`, as in Java and JS.
 
@@ -131,25 +131,27 @@ OTel features like RUM.
 
 ## Published packages
 
-| Package                             | Kind                 | Depends on                       | Notes                                                                                                                    |
-|-------------------------------------|----------------------|----------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `opentelemetry_api`                 | API                  | —                                | Pure Dart, no `dart:io`. No-op by default.                                                                               |
-| `opentelemetry_sdk`                 | SDK                  | api                              | Exporter interfaces, processors, samplers, console + in-memory exporters, generic resource detectors. Platform-agnostic. |
-| `opentelemetry_semantics`           | Semantic conventions | —                                | Weaver-generated.                                                                                                        |
-| `opentelemetry_exporter_otlp`       | Core exporter        | sdk, protobuf, http              | Protos, transformers, OTLP/HTTP (protobuf + JSON), config, gzip, user agent, cert utils, HTTP client factory. Web-safe.  |
-| `opentelemetry_exporter_otlp_grpc`  | Core exporter        | exporter_otlp, grpc              | Split out so HTTP-only and web builds never see `dart:io`/grpc.                                                          |
-| `opentelemetry_exporter_prometheus` | Exporter             | sdk                              |                                                                                                                          |
-| `opentelemetry`                     | Dart entry point     | api, sdk, exporter_otlp          | Re-exports api + sdk. `OTel.initialize()`.                                                                               |
-| `opentelemetry_flutter`             | Flutter entry point  | api, sdk, exporter_otlp, Flutter | Re-exports api + sdk. `FlutterOTel.initialize()`, Flutter resource detection, lifecycle.                                 |
+| Package                    | Kind                 | Depends on                       | Notes                                                                                                                    |
+|----------------------------|----------------------|----------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `opentelemetry_api`        | API                  | —                                | Pure Dart, no `dart:io`. No-op by default.                                                                               |
+| `opentelemetry_sdk`        | SDK                  | api                              | Exporter interfaces, processors, samplers, console + in-memory exporters, generic resource detectors. Platform-agnostic. |
+| `opentelemetry_semantics`  | Semantic conventions | —                                | Weaver-generated.                                                                                                        |
+| `opentelemetry_otlp`       | Core exporter        | sdk, protobuf, http              | Protos, transformers, OTLP/HTTP (protobuf + JSON), config, gzip, user agent, cert utils, HTTP client factory. Web-safe.  |
+| `opentelemetry_otlp_grpc`  | Core exporter        | exporter_otlp, grpc              | Split out so HTTP-only and web builds never see `dart:io`/grpc.                                                          |
+| `opentelemetry_prometheus` | Exporter             | sdk                              |                                                                                                                          |
+| `opentelemetry`            | Dart entry point     | api, sdk, exporter_otlp          | Re-exports api + sdk. `OTel.initialize()`.                                                                               |
+| `opentelemetry_flutter`    | Flutter entry point  | api, sdk, exporter_otlp, Flutter | Re-exports api + sdk. `FlutterOTel.initialize()`, Flutter resource detection, lifecycle.                                 |
 
 Dependency graph:
 
 ```
+opentelemetry_semantics - independent, nothings else depends on it, nor does it depend on anything else 
+      
 opentelemetry_api
       ▲
 opentelemetry_sdk
       ▲
-opentelemetry_exporter_otlp ◄── opentelemetry_exporter_otlp_grpc (optional)
+opentelemetry_otlp ◄── opentelemetry_otlp_grpc (optional)
       ▲
       ├── opentelemetry            (Dart)
       └── opentelemetry_flutter    (Flutter)
@@ -161,25 +163,14 @@ It is recommended that the directory layout has a directory for each package und
 
 ## Contrib
 
-Contrib packages are integrations with packages that are outside OTel.  Every language has a separate repo for contrib.
-
-Mindful Software published and will contribute to OpenTelemetry the 40–50 open-source `otel_*` packages to pub.dev 
-(e.g. `otel_logger`, `otel_go_router`, `otel_serverpod`). Each lives in its own repo
-today and uses the same `dart ./tool/release.dart` publishing workflow as the
-SDK and API.  
-
-Contributing these to OpenTelemetry gives us a place to work with the
-maintainers of the instrumented packages and grow the OpenTelemetry community.
-For example, the Serverpod team has reviewed [`otel_serverpod`](https://pub.dev/packages/otel_serverpod) 
-and we plan to work on it together. 
+Contrib packages are instrumentations and integrations with packages that are outside OTel.  
+Every OTel language has a separate repo for contrib.
+Contrib packages will have a standard naming of `otel_<package>` after the
+package they instrument, i.e. `otel_logger`.
 
 ## Publishing
-
-Once agreed:
-
-- Publish placeholder releases to reserve the names under the OpenTelemetry
-  verified publisher and signal to humans and AI tooling that they're coming
-  (check pub.dev policy on placeholder packages first).
+- We will work with existing publishers to transfer the packages to the [opentelemetry.io publisher](https://pub.dev/publishers/opentelemetry.io/packages).
+- Publish placeholder releases to signal to humans and AI tooling that they're coming.
 - `opentelemetry` is currently at 0.18.x (transferred from Workiva). It needs
   a `1.0.0-beta` or `1.0.0` release from this repo.
 
