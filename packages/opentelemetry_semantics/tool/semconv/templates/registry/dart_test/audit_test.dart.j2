@@ -1,0 +1,34 @@
+{%- import 'macros.j2' as m -%}
+{{ m.file_header() }}
+
+// Names every member the registry defines, deprecated ones included.
+// ignore_for_file: deprecated_member_use_from_same_package
+
+// Generated audit: asserts every attribute key and every value-enum
+// literal against the registry it was generated from.
+
+import 'package:opentelemetry_semantics/incubating.dart';
+import 'package:test/test.dart';
+
+void main() {
+{% for g in ctx %}
+  group('{{ g.root_namespace }}', () {
+    test('attribute keys', () {
+      expect({{ m.type_name(g.root_namespace) }}.values.length, {{ g.attributes | length }});
+{% for attribute in g.attributes %}
+      expect({{ m.type_name(g.root_namespace) }}.{{ m.ident(attribute.name) }}.key, '{{ attribute.name }}');
+{% endfor %}
+    });
+{% for attribute in g.attributes %}
+{% if attribute.type is mapping %}
+    test('{{ attribute.name }} values', () {
+      expect({{ m.value_type_name(attribute.name) }}.values.length, {{ attribute.type.members | length }});
+{% for member in attribute.type.members %}
+      expect({{ m.value_type_name(attribute.name) }}.{{ m.ident(member.id) }}.value, {{ member.value if attribute.type.members[0].value is int else "'" ~ m.dart_str(member.value) ~ "'" }});
+{% endfor %}
+    });
+{% endif %}
+{% endfor %}
+  });
+{% endfor %}
+}

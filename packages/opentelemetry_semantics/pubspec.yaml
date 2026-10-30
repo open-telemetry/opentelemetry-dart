@@ -1,0 +1,15 @@
+name: opentelemetry_semantics
+description: OpenTelemetry semantic conventions for Dart.
+version: 0.1.0-dev
+repository: https://github.com/open-telemetry/opentelemetry-dart
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+dependencies:
+  meta: ^1.16.0
+
+dev_dependencies:
+  test: ^1.25.6
