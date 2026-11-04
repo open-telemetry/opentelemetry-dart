@@ -1,0 +1,64 @@
+{%- import 'macros.j2' as m -%}
+{{ m.file_header() }}
+
+// Names every member the registry defines, deprecated ones included.
+// ignore_for_file: deprecated_member_use_from_same_package
+
+// Generated audit: asserts every metric, event, and entity against the
+// registry it was generated from.
+
+import 'package:opentelemetry_semantics/incubating.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('metrics', () {
+{% for g in ctx.metric_groups %}
+    test('{{ g.root_namespace }}', () {
+      expect({{ m.signal_type_name(g.root_namespace, "Metric") }}.values.length, {{ g.metrics | length }});
+{% for metric in g.metrics %}
+      expect({{ m.signal_type_name(g.root_namespace, "Metric") }}.{{ m.ident(metric.metric_name) }}.name, '{{ metric.metric_name }}');
+      expect({{ m.signal_type_name(g.root_namespace, "Metric") }}.{{ m.ident(metric.metric_name) }}.instrument, SemanticInstrument.{{ metric.instrument | map_text("instrument_map") }});
+      expect({{ m.signal_type_name(g.root_namespace, "Metric") }}.{{ m.ident(metric.metric_name) }}.unit, '{{ m.dart_str(metric.unit) }}');
+{% endfor %}
+    });
+{% endfor %}
+  });
+
+  group('events', () {
+{% for g in ctx.event_groups %}
+    test('{{ g.root_namespace }}', () {
+      expect({{ m.signal_type_name(g.root_namespace, "Event") }}.values.length, {{ g.events | length }});
+{% for event in g.events %}
+      expect({{ m.signal_type_name(g.root_namespace, "Event") }}.{{ m.ident(event.name) }}.name, '{{ event.name }}');
+{% endfor %}
+    });
+{% endfor %}
+  });
+
+  group('entities', () {
+{% for g in ctx.entity_groups %}
+    test('{{ g.root_namespace }}', () {
+      expect({{ m.signal_type_name(g.root_namespace, "Entity") }}.values.length, {{ g.entities | length }});
+{% for entity in g.entities %}
+      expect({{ m.signal_type_name(g.root_namespace, "Entity") }}.{{ m.ident(entity.name) }}.name, '{{ entity.name }}');
+{% if entity.identifying | length > 0 %}
+      expect(
+        {{ m.signal_type_name(g.root_namespace, "Entity") }}.{{ m.ident(entity.name) }}.identifying.map((a) => a.key),
+        [{% for a in entity.identifying %}'{{ a }}'{{ ", " if not loop.last }}{% endfor %}],
+      );
+{% else %}
+      expect({{ m.signal_type_name(g.root_namespace, "Entity") }}.{{ m.ident(entity.name) }}.identifying, isEmpty);
+{% endif %}
+{% if entity.descriptive | length > 0 %}
+      expect(
+        {{ m.signal_type_name(g.root_namespace, "Entity") }}.{{ m.ident(entity.name) }}.descriptive.map((a) => a.key),
+        [{% for a in entity.descriptive %}'{{ a }}'{{ ", " if not loop.last }}{% endfor %}],
+      );
+{% else %}
+      expect({{ m.signal_type_name(g.root_namespace, "Entity") }}.{{ m.ident(entity.name) }}.descriptive, isEmpty);
+{% endif %}
+{% endfor %}
+    });
+{% endfor %}
+  });
+}
