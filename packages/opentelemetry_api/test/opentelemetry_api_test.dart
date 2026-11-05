@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // The package has no public API yet. The import checks that the library compiles.
 // ignore: unused_import
 import 'package:opentelemetry_api/opentelemetry_api.dart';
