@@ -1,0 +1,17 @@
+name: opentelemetry
+description: OpenTelemetry for Dart, the entry point package.
+version: 1.0.0-dev
+repository: https://github.com/open-telemetry/opentelemetry-dart
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+resolution: workspace
+
+dependencies:
+  opentelemetry_api: ^1.0.0-dev
+  opentelemetry_sdk: ^1.0.0-dev
+
+dev_dependencies:
+  test: ^1.25.6
