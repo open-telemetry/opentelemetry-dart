@@ -34,5 +34,4 @@ In a shell script, use `#` instead of `//`, after the shebang line.
 1. Make a directory for the package in `packages/`.
 2. Add `resolution: workspace` to the `pubspec.yaml` file of the package.
 3. Add the directory to the `workspace` list in the root `pubspec.yaml` file.
-4. Add the name of the package to the `package` matrix in `.github/workflows/ci.yml`.
-5. Run `dart pub get` in the root directory.
+4. Run `dart pub get` in the root directory.

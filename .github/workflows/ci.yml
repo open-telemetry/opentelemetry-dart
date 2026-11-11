@@ -21,6 +21,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  packages:
+    name: packages
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: List workspace packages
+        id: list
+        run: echo "list=$(yq -o=json -I=0 '.workspace' pubspec.yaml)" >> "$GITHUB_OUTPUT"
+
   workspace:
     name: workspace
     runs-on: ubuntu-latest
@@ -47,20 +62,17 @@ jobs:
 
   test:
     name: ${{ matrix.package }} (Dart ${{ matrix.sdk }})
+    needs: packages
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - opentelemetry
-          - opentelemetry_api
-          - opentelemetry_sdk
-          - opentelemetry_semantics
+        package: ${{ fromJSON(needs.packages.outputs.list) }}
         # `minimum` is DART_SDK_VERSION, so pub solves against the declared floor.
         sdk: [minimum, stable]
     defaults:
       run:
-        working-directory: packages/${{ matrix.package }}
+        working-directory: ${{ matrix.package }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
