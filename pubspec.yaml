@@ -1,0 +1,14 @@
+name: opentelemetry_dart_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+workspace:
+  - packages/opentelemetry_api
+  - packages/opentelemetry_sdk
+  - packages/opentelemetry_semantics
+  - packages/opentelemetry
+
+dev_dependencies:
+  lints: ^6.0.0
