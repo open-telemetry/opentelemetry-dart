@@ -2,6 +2,7 @@ name: opentelemetry_dart_workspace
 publish_to: none
 
 environment:
+  # Do not lower: package:lints 6 needs Dart 3.8.0.
   sdk: ^3.8.0
 
 workspace:
