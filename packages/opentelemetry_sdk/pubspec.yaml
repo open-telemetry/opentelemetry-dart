@@ -9,5 +9,8 @@ environment:
 
 resolution: workspace
 
+dependencies:
+  opentelemetry_api: ^0.1.0-dev
+
 dev_dependencies:
   test: ^1.25.6
