@@ -113,9 +113,11 @@ Exporter packages depend on `opentelemetry_sdk`. `opentelemetry_sdk` defines the
 
 Since we know HTTP will be used in 90% of the cases, we split gRPC into its own package which will make web builds simpler - there's no dart.io.
 
-1. `opentelemetry_otlp_http` -  the HTTP client factory, otlp_json, otlp_user_agent, otlp_http_protocol, gzip, certificate utils.
-2. `opentelemetry_otlp_grpc` - lib/proto/ and gRPC exporters, transformers and config. It will depend on the sdk, protobuf, http, and grpc.
-3. Prometheus exporters go into its own package `opentelemetry_prometheus`.
+1. `opentelemetry_proto` - the generated OTLP protobuf messages and nothing else. It depends only on protobuf, not on the API or the SDK, so a receiver, a test collector or any other tool can read and write OTLP without an exporter. Go, Python, Rust and Java publish the protos the same way.
+2. `opentelemetry_otlp` - the transformers from SDK data to protos, and everything the OTLP exporter spec shares between transports: the `OTEL_EXPORTER_OTLP_*` options and env vars, timeout semantics, retry with backoff, header parsing, gzip, size limits, user agent. No transport. It depends on the sdk and `opentelemetry_proto`. The SDK dependency is inherent: the transformers read finished spans, metric data and log records, and those types exist only in the SDK.
+3. `opentelemetry_otlp_http` - the HTTP client factory, OTLP/HTTP in protobuf and JSON, certificate utils. Web-safe. It depends on `opentelemetry_otlp` and http.
+4. `opentelemetry_otlp_grpc` - the gRPC exporters and the generated gRPC service stubs, which import grpc and so cannot live in `opentelemetry_proto`. It depends on `opentelemetry_otlp` and grpc. It never sees http.
+5. Prometheus exporters go into its own package `opentelemetry_prometheus`.
 
 The stdout (console) and in-memory exporters have no heavy dependencies and stay in `opentelemetry_sdk`, as in Java and JS.
 
@@ -136,25 +138,30 @@ OTel features like RUM.
 | `opentelemetry_api`        | API                  | —                                | Pure Dart, no `dart:io`. No-op by default.                                                                               |
 | `opentelemetry_sdk`        | SDK                  | api                              | Exporter interfaces, processors, samplers, console + in-memory exporters, generic resource detectors. Platform-agnostic. |
 | `opentelemetry_semantics`  | Semantic conventions | —                                | Weaver-generated.                                                                                                        |
-| `opentelemetry_otlp`       | Core exporter        | sdk, protobuf, http              | Protos, transformers, OTLP/HTTP (protobuf + JSON), config, gzip, user agent, cert utils, HTTP client factory. Web-safe.  |
-| `opentelemetry_otlp_grpc`  | Core exporter        | exporter_otlp, grpc              | Split out so HTTP-only and web builds never see `dart:io`/grpc.                                                          |
+| `opentelemetry_proto`      | OTLP protos          | protobuf                         | Generated OTLP messages only. No API, no SDK. Usable by receivers and tools.                                             |
+| `opentelemetry_otlp`       | Core exporter        | sdk, proto                       | Transformers, shared OTLP config, env vars, retry, gzip, size limits, user agent. No transport.                          |
+| `opentelemetry_otlp_http`  | Core exporter        | otlp, http                       | OTLP/HTTP (protobuf + JSON), HTTP client factory, cert utils. Web-safe.                                                  |
+| `opentelemetry_otlp_grpc`  | Core exporter        | otlp, grpc                       | gRPC exporters and service stubs. Split out so HTTP-only and web builds never see `dart:io`/grpc.                        |
 | `opentelemetry_prometheus` | Exporter             | sdk                              |                                                                                                                          |
-| `opentelemetry`            | Dart entry point     | api, sdk, exporter_otlp          | Re-exports api + sdk. `OTel.initialize()`.                                                                               |
-| `opentelemetry_flutter`    | Flutter entry point  | api, sdk, exporter_otlp, Flutter | Re-exports api + sdk. `FlutterOTel.initialize()`, Flutter resource detection, lifecycle.                                 |
+| `opentelemetry`            | Dart entry point     | api, sdk, otlp_http              | Re-exports api + sdk. `OTel.initialize()`.                                                                               |
+| `opentelemetry_flutter`    | Flutter entry point  | api, sdk, otlp_http, Flutter     | Re-exports api + sdk. `FlutterOTel.initialize()`, Flutter resource detection, lifecycle.                                 |
 
 Dependency graph:
 
 ```
-opentelemetry_semantics - independent, nothings else depends on it, nor does it depend on anything else 
-      
-opentelemetry_api
+opentelemetry_semantics - independent, nothing else depends on it, nor does it depend on anything else
+
+opentelemetry_api            opentelemetry_proto - depends only on protobuf
+      ▲                              ▲
+opentelemetry_sdk                    │
+      ▲                              │
+opentelemetry_otlp ──────────────────┘
       ▲
-opentelemetry_sdk
-      ▲
-opentelemetry_otlp ◄── opentelemetry_otlp_grpc (optional)
-      ▲
-      ├── opentelemetry            (Dart)
-      └── opentelemetry_flutter    (Flutter)
+      ├── opentelemetry_otlp_http
+      │         ▲
+      │         ├── opentelemetry            (Dart)
+      │         └── opentelemetry_flutter    (Flutter)
+      └── opentelemetry_otlp_grpc (optional)
 ```
 
 Both entry points are thin; everything shared lives in the SDK and exporters.
